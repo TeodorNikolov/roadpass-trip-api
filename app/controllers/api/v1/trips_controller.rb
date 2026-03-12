@@ -1,58 +1,54 @@
-class Api::V1::TripsController < ApplicationController
-  rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
+module Api
+  module V1
+    class TripsController < ApplicationController
+      before_action :set_trip, only: [:show]
 
-  def index
-    trips = Trip.all
-    trips = trips.search(params[:search])
-    trips = trips.min_rating(params[:min_rating])
-    trips = sort_trips(trips)
-    trips = trips.page(params[:page]).per(params[:per_page] || 10)
+      def index
+        trips = Trip.all
 
-    render json: {
-      data: TripSerializer.new(trips),
-      meta: {
-        page: trips.current_page,
-        total_pages: trips.total_pages,
-        total_count: trips.total_count
-      }
-    }
-  end
+        trips = trips.search(params[:search])
+        trips = trips.min_rating(params[:min_rating])
+        trips = trips.sorted(params[:sort])
 
-  def show
-    trip = Trip.find(params[:id])
-    render json: TripDetailSerializer.new(trip)
-  end
+        trips = trips.page(params[:page]).per(params[:per_page] || 10)
 
-  def create
-    trip = Trip.new(trip_params)
+        render json: {
+        data: trips.map { |trip| TripListSerializer.new(trip) },
+        meta: pagination_meta(trips)
+        }
+      end
 
-    if trip.save
-      render json: TripDetailSerializer.new(trip), status: :created
-    else
-      render json: { errors: trip.errors.full_messages }, status: :unprocessable_entity
+      def show
+        render json: TripSerializer.new(@trip)
+      end
+
+      def create
+        trip = Trip.new(trip_params)
+        if trip.save
+          render json: TripSerializer.new(trip), status: :created
+        else
+          render json: { errors: trip.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      private
+
+      def set_trip
+        @trip = Trip.find_by(id: params[:id])
+        render json: { error: 'Trip not found' }, status: :not_found unless @trip
+      end
+
+      def trip_params
+        params.require(:trip).permit(:name, :image_url, :short_description, :long_description, :rating)
+      end
+
+      def pagination_meta(paginated)
+        {
+          current_page: paginated.current_page,
+          total_pages: paginated.total_pages,
+          total_count: paginated.total_count
+        }
+      end
     end
-  end
-
-  private
-
-  def trip_params
-    params.require(:trip).permit(
-      :name, :image_url, :short_description, :long_description, :rating
-    )
-  end
-
-  def sort_trips(trips)
-    case params[:sort]
-    when "rating_desc"
-      trips.order(rating: :desc)
-    when "rating_asc"
-      trips.order(rating: :asc)
-    else
-      trips.order(:name)
-    end
-  end
-
-  def record_not_found
-    render json: { error: "Trip not found" }, status: :not_found
   end
 end
