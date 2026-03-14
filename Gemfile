@@ -23,6 +23,7 @@ gem "kaminari"
 gem "jsonapi-serializer"
 gem 'test-prof'
 gem 'sidekiq'
+gem 'sidekiq-cron'
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
@@ -41,6 +42,7 @@ gem "image_processing", "~> 1.2"
 group :test do
   gem "rspec-rails"
   gem "factory_bot_rails"
+  gem 'fakeredis', require: 'fakeredis/rspec'
 end
 
 
