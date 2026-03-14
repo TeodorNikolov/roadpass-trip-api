@@ -1,9 +1,9 @@
 FactoryBot.define do
   factory :trip do
-    name { "Test Trip #{rand(1000)}" }
+    sequence(:name) { |n| "Trip #{n}" }
     image_url { "https://example.com/image.jpg" }
     short_description { "Short description" }
-    long_description { "Long description for the trip." }
-    rating { rand(1..5) }
+    long_description { "Long description of the trip." }
+    rating { 4 }
   end
 end

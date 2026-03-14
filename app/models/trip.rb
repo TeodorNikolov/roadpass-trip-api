@@ -1,25 +1,39 @@
 class Trip < ApplicationRecord
-  validates :name, presence: true, uniqueness: true
-  validates :image_url, presence: true, format: URI::DEFAULT_PARSER.make_regexp(%w[http https])
+  URL_REGEX = URI::DEFAULT_PARSER.make_regexp(%w[http https])
+
+  validates :name,
+            presence: true,
+            uniqueness: { case_sensitive: false }
+
+  validates :image_url,
+            presence: true,
+            format: { with: URL_REGEX }
+
   validates :short_description, :long_description, presence: true
-  validates :rating, presence: true, inclusion: { in: 1..5 }
+
+  validates :rating,
+            presence: true,
+            numericality: { only_integer: true },
+            inclusion: { in: 1..5 }
 
   scope :search, ->(term) {
-    where("LOWER(name) LIKE ?", "%#{term.downcase}%") if term.present?
+    term.present? ? where("LOWER(name) LIKE ?", "%#{term.downcase}%") : all
   }
 
   scope :min_rating, ->(rating) {
-    where("rating >= ?", rating.to_i) if rating.present?
+    rating.present? ? where("rating >= ?", rating.to_i) : all
   }
 
   scope :sorted, ->(sort) {
-    case sort
-    when "asc"
-      order(rating: :asc)
-    when "desc"
-      order(rating: :desc)
-    else
-      order(name: :asc)
-    end
+    return order(name: :asc) if sort.blank?
+
+    direction = %w[asc desc].include?(sort) ? sort : "asc"
+    order(rating: direction)
   }
+
+  def self.filter(params)
+    search(params[:search])
+      .min_rating(params[:min_rating])
+      .sorted(params[:sort])
+  end
 end
