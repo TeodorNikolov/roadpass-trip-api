@@ -1,130 +1,96 @@
-This project is a Ruby on Rails API serving trip/destination data. It supports listing, filtering, sorting, pagination, and retrieving details for individual trips.
+Roadpass API
 
-The API is backed by PostgreSQL and includes RSpec tests, factory_bot for test data, and a background job example using Sidekiq.
+This is the Roadpass API built with Rails 8 and PostgreSQL, containerized using Docker Compose. This README includes setup, commands, and testing instructions for a fully local development environment.
 
-Table of Contents
-
-Tech Stack
-
-Setup
-
-Database
-
-Running the App
-
-API Endpoints
-
-Testing
-
-Background Jobs
-
-Design Decisions
-
-Future Improvements
-
-Tech Stack
-
-Ruby 3.2 / Rails 8.1
-
-PostgreSQL 15+
-
-Sidekiq + Redis
-
-RSpec, FactoryBot, Shoulda Matchers, Fakeredis (for tests)
-
-Docker + Docker Compose (for easy local setup)
-
-Setup
-Requirements
+Prerequisites
 
 Docker
- and Docker Compose
 
-Optional: Local Ruby and Postgres (if not using Docker)
+Docker Compose
 
-Steps
-# Clone repo
-git clone <repo_url>
-cd <repo_folder>
+Note: No need to install Ruby, Rails, or PostgreSQL locally. Everything runs inside Docker.
 
-# Build and start containers
+Local Setup
+
+Clone the repository
+
+git clone https://github.com/TeodorNikolov/roadpass_api.git
+cd roadpass_api
+
+
+Create .env file (optional, if you need environment variables)
+
+RAILS_ENV=development
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=roadpass_dev
+
+
+Build and start Docker Compose
+
 docker-compose up --build
 
-# Enter Rails container
-docker-compose exec web bash
 
-# Install gems (if needed)
-bundle install
+This will build the Rails app image, start the Rails server, and PostgreSQL database.
 
-# Setup database
-rails db:create
-rails db:migrate
-rails db:seed
+Rails API will be accessible at http://localhost:3000
 
-The API will be available at http://localhost:3000.
+Database Setup
 
-Database
+Run the following commands inside the Docker container:
 
-Trip Model Fields:
+# Enter the Rails container
+docker-compose exec app bash
 
-Field	Type	Notes
-name	string	Required
-image_url	string	Required
-short_description	string	Required
-long_description	text	Required
-rating	integer	1–5, required
+# Create and migrate the database
+rails db:create db:migrate db:seed
 
-Validations: All fields required, rating between 1–5. Indexes on name and rating for faster search/filter.
 
-Seed Data: Loaded from data.json (20 trips).
+rails db:create → creates dev/test databases
 
-API Endpoints
-Method	Path	Description	Query Params
-GET	/api/v1/trips	List trips (supports search/filter/sort/pagination)	search, min_rating, sort, page, per_page
-GET	/api/v1/trips/:id	Retrieve full trip details	-
-POST	/api/v1/trips	Create a new trip	JSON body: name, image_url, short_description, long_description, rating
+rails db:migrate → runs migrations
 
-Testing
+rails db:seed → seeds sample data (optional)
 
-All tests are written in RSpec with FactoryBot and Shoulda Matchers.
+Running the API
 
-Run all tests:
-docker-compose exec web bundle exec rspec
-Run a specific job test:
-docker-compose exec web bundle exec rspec spec/jobs/nightly_trip_summary_job_spec.rb
-Run request specs:
-docker-compose exec web bundle exec rspec spec/requests/api/v1/trips_spec.rb
-Background Jobs
+Inside the container:
 
-Example background job: NightlyTripSummaryJob
+rails s -b 0.0.0.0
 
-Summarizes trips by rating nightly
 
-Logs summary to Rails logger
+Access API endpoints at http://localhost:3000/api/v1/...
 
-Uses Sidekiq queue default
+Example endpoints:
 
-Run Sidekiq:
+Method	Path	Description
+GET	/api/v1/trips	List all trips
+GET	/api/v1/trips/:id	Show a single trip
+POST	/api/v1/trips	Create a new trip
+Running Tests
 
-docker-compose exec sidekiq bundle exec sidekiq
-Design Decisions
+Run all RSpec tests inside Docker:
 
-API Versioning: /api/v1 path prefix for future-proofing
+docker-compose exec app bundle exec rspec
 
-Serializer/Presenter: Avoid exposing database fields directly; only return required attributes
 
-Strong Parameters: Ensure only allowed fields are created/updated
+You should see 0 failures if the setup is correct.
 
-Fakeredis: Used in tests to avoid connecting to real Redis
+To run a single spec file:
 
-Pagination: Default 10 per page; supports page/per_page query params
+docker-compose exec app bundle exec rspec spec/requests/api/v1/trips_spec.rb
 
-Future Improvements
+Useful Commands
+Command	Description
+docker-compose up	Start app and database containers
+docker-compose up --build	Rebuild containers and start
+docker-compose exec app bash	Open a shell inside Rails container
+rails db:create db:migrate db:seed	Setup database inside container
+rails c	Rails console inside container
+bundle exec rspec	Run all tests inside container
+docker-compose down	Stop and remove containers
+Notes
 
-Add caching for trips index to reduce DB load
+Windows host: Do not try to run Rails or PostgreSQL natively. Use Docker Compose to avoid hostname issues like db not found.
 
-Add CI/CD workflow (GitHub Actions) to run tests on each push
-
-Add authentication for secure trip creation
-
-Enhance background job with email notifications
+Serializer changes: API responses are consistent with TripSerializer for single trips and TripListSerializer for lists.
