@@ -1,18 +1,13 @@
 # The test environment is used exclusively to run your application's
-# test suite. You never need to work with it otherwise. Remember that
-# your test database is "scratch space" for the test suite and is wiped
-# and recreated between test runs. Don't rely on the data there!
+# test suite. Remember the test database is wiped and recreated between runs.
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
-  # While tests run files are not watched, reloading is not necessary.
+  # Reloading is not necessary while tests run files.
   config.enable_reloading = false
 
-  # Eager loading loads your entire application. When running a single test locally,
-  # this is usually not necessary, and can slow down your test suite. However, it's
-  # recommended that you enable it in continuous integration systems to ensure eager
-  # loading is working properly before deploying your code.
+  # Eager load your entire application in CI or when needed.
   config.eager_load = ENV["CI"].present?
 
   # Configure public file server for tests with cache-control for performance.
@@ -20,26 +15,30 @@ Rails.application.configure do
 
   # Show full error reports.
   config.consider_all_requests_local = true
+
+  # Use null store for caching in tests.
   config.cache_store = :null_store
 
-  # Render exception templates for rescuable exceptions and raise for other exceptions.
+  # -----------------------------
+  # ✅ Fix Host Authorization in test
+  # Clear host restrictions so tests and RSpec requests always work
+  config.hosts.clear
+  # -----------------------------
+
+  # Render exception templates for rescuable exceptions and raise for others.
   config.action_dispatch.show_exceptions = :rescuable
 
-  # Disable request forgery protection in test environment.
+  # Disable CSRF protection in test environment.
   config.action_controller.allow_forgery_protection = false
 
   # Store uploaded files on the local file system in a temporary directory.
   config.active_storage.service = :test
 
-  # Tell Action Mailer not to deliver emails to the real world.
-  # The :test delivery method accumulates sent emails in the
-  # ActionMailer::Base.deliveries array.
+  # Don't deliver emails to the real world; collect in ActionMailer::Base.deliveries
   config.action_mailer.delivery_method = :test
-
-  # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "example.com" }
 
-  # Print deprecation notices to the stderr.
+  # Print deprecation notices to stderr.
   config.active_support.deprecation = :stderr
 
   # Raises error for missing translations.

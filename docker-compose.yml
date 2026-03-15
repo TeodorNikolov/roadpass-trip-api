@@ -10,7 +10,7 @@ services:
       - "3000:3000"
     environment:
       RAILS_ENV: development
-      DATABASE_URL: postgres://postgres:password@db:5432/roadpass_dev
+      DATABASE_URL: postgres://postgres:0@db:5432/roadpass_api_development
       REDIS_URL: redis://redis:6379/1
     depends_on:
       - db
@@ -25,7 +25,7 @@ services:
       - .:/app
     environment:
       RAILS_ENV: development
-      DATABASE_URL: postgres://postgres:password@db:5432/roadpass_dev
+      DATABASE_URL: postgres://postgres:0@db:5432/roadpass_api_development
       REDIS_URL: redis://redis:6379/1
     depends_on:
       - db
@@ -36,8 +36,8 @@ services:
     container_name: roadpass_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: roadpass_dev
+      POSTGRES_PASSWORD: 0
+      POSTGRES_DB: roadpass_api_development
     ports:
       - "5432:5432"
     volumes:

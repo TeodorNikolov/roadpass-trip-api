@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe TripSerializer do
+RSpec.describe Api::V1::TripSerializer do
   let(:trip) { create(:trip) }
 
   it "serializes trip attributes" do

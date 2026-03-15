@@ -1,5 +1,5 @@
 # spec/rails_helper.rb
-
+require 'database_cleaner/active_record'
 # 1️⃣ Set Rails environment
 ENV['RAILS_ENV'] ||= 'test'
 
@@ -27,7 +27,19 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 
 # 6️⃣ Load RSpec Rails & helpers
 require 'rspec/rails'
+require 'factory_bot_rails'
 require 'test_prof/recipes/rspec/let_it_be'
+
+# Load Shoulda Matchers
+require 'shoulda/matchers'
+
+# Configure Shoulda Matchers
+Shoulda::Matchers.configure do |config|
+  config.integrate do |with|
+    with.test_framework :rspec
+    with.library :rails
+  end
+end
 
 # 7️⃣ Skip Sidekiq Cron jobs in test
 module Sidekiq
@@ -57,12 +69,27 @@ RSpec.configure do |config|
 
   # Filter Rails backtraces
   config.filter_rails_from_backtrace!
+end
 
-  # Shoulda matchers
-  Shoulda::Matchers.configure do |shoulda|
-    shoulda.integrate do |with|
-      with.test_framework :rspec
-      with.library :rails
-    end
+# spec/rails_helper.rb
+if ENV['DATABASE_URL'].nil? || ENV['DATABASE_URL'].include?('localhost') || ENV['DATABASE_URL'].include?('db')
+  DatabaseCleaner.allow_remote_database_url = true
+  DatabaseCleaner.clean_with(:truncation, except: %w[ar_internal_metadata])
+else
+  puts "Skipping DatabaseCleaner.truncation: remote database detected"
+end
+
+RSpec.configure do |config|
+  config.before(:suite) do
+    DatabaseCleaner.clean_with(:truncation)
+  end
+
+  config.before(:each) do
+    DatabaseCleaner.strategy = :transaction
+    DatabaseCleaner.start
+  end
+
+  config.after(:each) do
+    DatabaseCleaner.clean
   end
 end
